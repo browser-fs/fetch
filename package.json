@@ -1,0 +1,56 @@
+{
+	"name": "@browserfs/fetch",
+	"version": "0.0.1",
+	"description": "BrowserFS backend that uses the fetch API to get remote files",
+	"main": "dist/index.js",
+	"types": "dist",
+	"keywords": [
+		"filesystem",
+		"node",
+		"storage"
+	],
+	"type": "module",
+	"homepage": "https://github.com/browser-fs/dom",
+	"author": "James P. <jp@drvortex.dev>",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/browser-fs/dom.git"
+	},
+	"bugs": {
+		"url": "https://github.com/browser-fs/dom/issues"
+	},
+	"engines": {
+		"node": ">= 18"
+	},
+	"exports": {
+		"./*": "./dist/*"
+	},
+	"typesVersions": {
+		"*": {
+			"*": [
+				"./dist/*"
+			]
+		}
+	},
+	"scripts": {
+		"format": "prettier --write src",
+		"format:check": "prettier --check src",
+		"lint": "tsc -p tsconfig.json --noEmit && eslint src",
+		"build": "node scripts/build.mjs",
+		"build:docs": "typedoc --out docs --name 'BrowserFS Fetch' src/index.ts",
+		"prepublishOnly": "npm run build"
+	},
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^5.55.0",
+		"@typescript-eslint/parser": "^5.55.0",
+		"esbuild": "^0.17.18",
+		"eslint": "^8.36.0",
+		"prettier": "^2.8.7",
+		"typedoc": "^0.25.1",
+		"typescript": "5.2.2"
+	},
+	"peerDependencies": {
+		"@browserfs/core": "^0.2.2"
+	}
+}
