@@ -13,7 +13,7 @@ const options = parseArgs({
 const ctx = await context({
 	entryPoints: ['src/index.ts'],
 	target: 'es2020',
-	globalName: 'BrowserFS_DOM',
+	globalName: 'BrowserFS_Fetch',
 	outfile: 'dist/browser.min.js',
 	sourcemap: true,
 	keepNames: true,
