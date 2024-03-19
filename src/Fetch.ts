@@ -1,11 +1,9 @@
-import { FileSystemMetadata, ReadonlyAsyncFileSystem } from '@browserfs/core/filesystem.js';
+import { FileSystemMetadata } from '@browserfs/core/filesystem.js';
 import { ApiError, ErrorCode } from '@browserfs/core/ApiError.js';
 import { FileFlag, NoSyncFile } from '@browserfs/core/file.js';
 import { Stats } from '@browserfs/core/stats.js';
-import { FileIndex, isIndexFileInode, isIndexDirInode, type ListingTree } from './FileIndex.js';
-import { Cred } from '@browserfs/core/cred.js';
+import { FileIndex, type ListingTree, AsyncFileIndexFS, type IndexFileInode } from '@browserfs/core/FileIndex.js';
 import type { Backend } from '@browserfs/core/backends/backend.js';
-import { R_OK } from '@browserfs/core/emulation/constants.js';
 
 /**
  * @hidden
@@ -53,7 +51,7 @@ async function fetchSize(p: string): Promise<number> {
 }
 
 /**
- * Configuration options for a HTTPRequest file system.
+ * Configuration options for FetchFS.
  */
 export interface FetchOptions {
 	/**
@@ -69,7 +67,7 @@ export interface FetchOptions {
 }
 
 /**
- * A simple filesystem backed by HTTP downloads.
+ * A simple filesystem backed by HTTP using the fetch API.
  *
  *
  * Listings objects look like the following:
@@ -89,44 +87,46 @@ export interface FetchOptions {
  *
  * This example has the folder `/home/jvilk` with subfile `someFile.txt` and subfolder `someDir`.
  */
-export class FetchFS extends ReadonlyAsyncFileSystem {
+export class FetchFS extends AsyncFileIndexFS<Stats> {
 	public readonly prefixUrl: string;
-	private _index: FileIndex<Stats>;
 
-	protected _ready: Promise<void>;
+	protected _init: Promise<void>;
+
+	protected async _initialize(index: string | ListingTree): Promise<void> {
+		if (typeof index != 'string') {
+			this._index = FileIndex.FromListing(index);
+			return;
+		}
+
+		try {
+			const response = await fetch(index);
+			this._index = FileIndex.FromListing(await response.json());
+		} catch (e) {
+			throw new ApiError(ErrorCode.EINVAL, 'Invalid or unavailable file listing tree');
+		}
+	}
 
 	public async ready(): Promise<this> {
-		await this._ready;
+		await this._init;
 		return this;
 	}
 
-	public async loadIndex(index: string | ListingTree): Promise<void> {
-		if (typeof index == 'string') {
-			index = await fetchFile<ListingTree>(index, 'json');
-		}
+	constructor({ index = 'index.json', baseUrl = '' }: FetchOptions) {
+		super({});
 
-		this._index = FileIndex.FromListing<Stats>(index);
-	}
-
-	constructor({ index, baseUrl = '' }: FetchOptions) {
-		super();
-		if (!index) {
-			index = 'index.json';
-		}
-
-		this._ready = this.loadIndex(index);
-
-		// prefix_url must end in a directory separator.
-		if (baseUrl.length > 0 && baseUrl.charAt(baseUrl.length - 1) !== '/') {
-			baseUrl = baseUrl + '/';
+		// prefix url must end in a directory separator.
+		if (baseUrl.at(-1) != '/') {
+			baseUrl += '/';
 		}
 		this.prefixUrl = baseUrl;
+
+		this._init = this._initialize(index);
 	}
 
-	public get metadata(): FileSystemMetadata {
+	public metadata(): FileSystemMetadata {
 		return {
-			...super.metadata,
-			name: FetchFS.Name,
+			...super.metadata(),
+			name: FetchFS.name,
 			readonly: true,
 		};
 	}
@@ -143,8 +143,8 @@ export class FetchFS extends ReadonlyAsyncFileSystem {
 	 * @param buffer
 	 */
 	public preloadFile(path: string, buffer: Uint8Array): void {
-		const inode = this._index.getInode(path);
-		if (!isIndexFileInode<Stats>(inode)) {
+		const inode = this._index.get(path);
+		if (!inode.isFile()) {
 			throw ApiError.EISDIR(path);
 		}
 
@@ -156,54 +156,17 @@ export class FetchFS extends ReadonlyAsyncFileSystem {
 		stats.fileData = buffer;
 	}
 
-	public async stat(path: string, cred: Cred): Promise<Stats> {
-		const inode = this._index.getInode(path);
-		if (!inode) {
-			throw ApiError.ENOENT(path);
-		}
-		if (!inode.toStats().hasAccess(R_OK, cred)) {
-			throw ApiError.EACCES(path);
+	protected async statFileInode(inode: IndexFileInode<Stats>, path: string): Promise<Stats> {
+		const stats = inode.data;
+		// At this point, a non-opened file will still have default stats from the listing.
+		if (stats.size < 0) {
+			stats.size = await this._fetchSize(path);
 		}
 
-		if (isIndexDirInode<Stats>(inode)) {
-			return inode.stats;
-		}
-
-		if (isIndexFileInode<Stats>(inode)) {
-			const stats = inode.data;
-			// At this point, a non-opened file will still have default stats from the listing.
-			if (stats.size < 0) {
-				stats.size = await this._fetchSize(path);
-			}
-
-			return stats;
-		}
-
-		throw ApiError.OnPath(ErrorCode.EINVAL, path);
+		return stats;
 	}
 
-	public async openFile(path: string, flag: FileFlag, cred: Cred): Promise<NoSyncFile<this>> {
-		if (flag.isWriteable()) {
-			// You can't write to files on this file system.
-			throw new ApiError(ErrorCode.EPERM, path);
-		}
-
-		// Check if the path exists, and is a file.
-		const inode = this._index.getInode(path);
-
-		if (!inode) {
-			throw ApiError.ENOENT(path);
-		}
-
-		if (!inode.toStats().hasAccess(flag.mode, cred)) {
-			throw ApiError.EACCES(path);
-		}
-
-		if (isIndexDirInode<Stats>(inode)) {
-			const stats = inode.stats;
-			return new NoSyncFile(this, path, flag, stats, stats.fileData);
-		}
-
+	protected async openFileInode(inode: IndexFileInode<Stats>, path: string, flag: FileFlag): Promise<NoSyncFile<this>> {
 		const stats = inode.data;
 		// Use existing file contents. This maintains the previously-used flag.
 		if (stats.fileData) {
@@ -215,23 +178,6 @@ export class FetchFS extends ReadonlyAsyncFileSystem {
 		stats.size = data.length;
 		stats.fileData = data;
 		return new NoSyncFile(this, path, flag, Stats.clone(stats), data);
-	}
-
-	public async readdir(path: string, cred: Cred): Promise<string[]> {
-		return this.readdirSync(path, cred);
-	}
-
-	/**
-	 * We have the entire file as a buffer; optimize readFile.
-	 */
-	public async readFile(fname: string, flag: FileFlag, cred: Cred): Promise<Uint8Array> {
-		// Get file.
-		const fd: NoSyncFile<FetchFS> = await this.openFile(fname, flag, cred);
-		try {
-			return fd.buffer;
-		} finally {
-			await fd.close();
-		}
 	}
 
 	private _getRemotePath(filePath: string): string {
