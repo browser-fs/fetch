@@ -25,7 +25,7 @@ async function fetchFile<T extends object>(p: string, type: 'buffer' | 'json'): 
 async function fetchFile<T extends object>(p: string, type: 'buffer' | 'json'): Promise<T | Uint8Array> {
 	const response = await fetch(p).catch(convertError);
 	if (!response.ok) {
-		throw new ApiError(ErrorCode.EIO, `fetch error: response returned code ${response.status}`);
+		throw new ApiError(ErrorCode.EIO, 'fetch failed: response returned code ' + response.status);
 	}
 	switch (type) {
 		case 'buffer':
@@ -45,7 +45,7 @@ async function fetchFile<T extends object>(p: string, type: 'buffer' | 'json'): 
 async function fetchSize(p: string): Promise<number> {
 	const response = await fetch(p, { method: 'HEAD' }).catch(convertError);
 	if (!response.ok) {
-		throw new ApiError(ErrorCode.EIO, 'fetch HEAD error: response returned code ' + response.status);
+		throw new ApiError(ErrorCode.EIO, 'fetch failed: HEAD response returned code ' + response.status);
 	}
 	return parseInt(response.headers.get('Content-Length') || '-1', 10);
 }
