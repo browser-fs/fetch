@@ -2,19 +2,15 @@
 
 A [BrowserFS](https://github.com/browser-fs/core) backend for fetching files using HTTP.
 
-Please read the BrowserFS documentation!
+> [!IMPORTANT]
+> Please read the BrowserFS core documentation
 
 For more information, see the [API documentation](https://browser-fs.github.io/fetch).
 
-## Installing
-
-```sh
-npm install @browserfs/fetch
-```
-
 ## Usage
 
-> 🛈 The examples are written in ESM. If you are using CJS, you can `require` the package. If running in a browser you can add a script tag to your HTML pointing to the `browser.min.js` and use BrowserFS Fetch via the global `BrowserFS_Fetch` object.
+> [!NOTE]
+> The examples are written in ESM. If you are using CJS, you can `require` the package. If running in a browser you can add a script tag to your HTML pointing to the `browser.min.js` and use BrowserFS Fetch via the global `BrowserFS_Fetch` object.
 
 ```js
 import { configure, fs } from '@browserfs/core';
