@@ -1,9 +1,9 @@
-import { FileSystemMetadata } from '@browserfs/core/filesystem.js';
-import { ApiError, ErrorCode } from '@browserfs/core/ApiError.js';
-import { FileFlag, NoSyncFile } from '@browserfs/core/file.js';
-import { Stats } from '@browserfs/core/stats.js';
-import { FileIndex, type ListingTree, AsyncFileIndexFS, type IndexFileInode } from '@browserfs/core/FileIndex.js';
-import type { Backend } from '@browserfs/core/backends/backend.js';
+import { FileSystemMetadata } from '@zenfs/core/filesystem.js';
+import { ApiError, ErrorCode } from '@zenfs/core/ApiError.js';
+import { FileFlag, NoSyncFile } from '@zenfs/core/file.js';
+import { Stats } from '@zenfs/core/stats.js';
+import { FileIndex, type ListingTree, AsyncFileIndexFS, type IndexFileInode } from '@zenfs/core/FileIndex.js';
+import type { Backend } from '@zenfs/core/backends/backend.js';
 
 /**
  * @hidden
