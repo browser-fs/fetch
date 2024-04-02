@@ -1,6 +1,6 @@
 import { FileSystemMetadata } from '@zenfs/core/filesystem.js';
 import { ApiError, ErrorCode } from '@zenfs/core/ApiError.js';
-import { FileFlag, NoSyncFile } from '@zenfs/core/file.js';
+import { NoSyncFile } from '@zenfs/core/file.js';
 import { Stats } from '@zenfs/core/stats.js';
 import { FileIndex, type ListingTree, AsyncFileIndexFS, type IndexFileInode } from '@zenfs/core/FileIndex.js';
 import type { Backend } from '@zenfs/core/backends/backend.js';
@@ -166,18 +166,18 @@ export class FetchFS extends AsyncFileIndexFS<Stats> {
 		return stats;
 	}
 
-	protected async openFileInode(inode: IndexFileInode<Stats>, path: string, flag: FileFlag): Promise<NoSyncFile<this>> {
+	protected async openFileInode(inode: IndexFileInode<Stats>, path: string, flag: string): Promise<NoSyncFile<this>> {
 		const stats = inode.data;
 		// Use existing file contents. This maintains the previously-used flag.
 		if (stats.fileData) {
-			return new NoSyncFile(this, path, flag, Stats.clone(stats), stats.fileData);
+			return new NoSyncFile(this, path, flag, new Stats(stats), stats.fileData);
 		}
 		// @todo be lazier about actually requesting the file
 		const data = await this._fetchFile(path, 'buffer');
 		// we don't initially have file sizes
 		stats.size = data.length;
 		stats.fileData = data;
-		return new NoSyncFile(this, path, flag, Stats.clone(stats), data);
+		return new NoSyncFile(this, path, flag, new Stats(stats), data);
 	}
 
 	private _getRemotePath(filePath: string): string {
