@@ -145,11 +145,11 @@ export class FetchFS extends AsyncFileIndexFS<Stats> {
 	public preloadFile(path: string, buffer: Uint8Array): void {
 		const inode = this._index.get(path);
 		if (!inode.isFile()) {
-			throw ApiError.EISDIR(path);
+			throw ApiError.With('EISDIR', path, 'preloadFile');
 		}
 
 		if (!inode) {
-			throw ApiError.ENOENT(path);
+			throw ApiError.With('ENOENT', path, 'preloadFile');
 		}
 		const stats = inode.data;
 		stats.size = buffer.length;
