@@ -1,6 +1,6 @@
 {
 	"name": "@zenfs/fetch",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "ZenFS backend that uses the fetch API to get remote files",
 	"main": "dist/index.js",
 	"types": "dist",
