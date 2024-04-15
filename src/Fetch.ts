@@ -1,9 +1,9 @@
-import { FileSystemMetadata } from '@zenfs/core/filesystem.js';
 import { ApiError, ErrorCode } from '@zenfs/core/ApiError.js';
-import { NoSyncFile } from '@zenfs/core/file.js';
-import { Stats } from '@zenfs/core/stats.js';
-import { FileIndex, type ListingTree, AsyncFileIndexFS, type IndexFileInode } from '@zenfs/core/FileIndex.js';
+import { AsyncFileIndexFS, FileIndex, type IndexFileInode, type ListingTree } from '@zenfs/core/FileIndex.js';
 import type { Backend } from '@zenfs/core/backends/backend.js';
+import { NoSyncFile } from '@zenfs/core/file.js';
+import { FileSystemMetadata } from '@zenfs/core/filesystem.js';
+import { Stats } from '@zenfs/core/stats.js';
 
 /**
  * @hidden
@@ -211,7 +211,7 @@ export const Fetch = {
 	options: {
 		index: {
 			type: ['string', 'object'],
-			required: true,
+			required: false,
 			description: 'URL to a file index as a JSON file or the file index object itself, generated with the make_http_index script. Defaults to `index.json`.',
 		},
 		baseUrl: {
@@ -228,4 +228,4 @@ export const Fetch = {
 	create(options: FetchOptions) {
 		return new FetchFS(options);
 	},
-} as const satisfies Backend;
+} as const satisfies Backend<FetchFS, FetchOptions>;
