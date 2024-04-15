@@ -228,4 +228,4 @@ export const Fetch = {
 	create(options: FetchOptions) {
 		return new FetchFS(options);
 	},
-} satisfies Backend;
+} as const satisfies Backend;
