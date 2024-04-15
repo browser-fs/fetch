@@ -211,10 +211,12 @@ export const Fetch = {
 	options: {
 		index: {
 			type: ['string', 'object'],
+			required: true,
 			description: 'URL to a file index as a JSON file or the file index object itself, generated with the make_http_index script. Defaults to `index.json`.',
 		},
 		baseUrl: {
 			type: 'string',
+			required: false,
 			description: 'Used as the URL prefix for fetched files. Default: Fetch files relative to the index.',
 		},
 	},
@@ -226,4 +228,4 @@ export const Fetch = {
 	create(options: FetchOptions) {
 		return new FetchFS(options);
 	},
-} as const satisfies Backend;
+} satisfies Backend;
