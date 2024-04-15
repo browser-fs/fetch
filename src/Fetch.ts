@@ -205,7 +205,7 @@ export class FetchFS extends AsyncFileIndexFS<Stats> {
 	}
 }
 
-export const Fetch: Backend<FetchFS> = {
+export const Fetch = {
 	name: 'Fetch',
 
 	options: {
@@ -226,4 +226,4 @@ export const Fetch: Backend<FetchFS> = {
 	create(options: FetchOptions) {
 		return new FetchFS(options);
 	},
-};
+} as const satisfies Backend;
